@@ -1,0 +1,17 @@
+# Browser automation
+playwright==1.48.0
+
+# LLM
+openai==1.58.1
+
+# Speech recognition
+deepgram-sdk==5.3.2
+
+# Audio processing
+# pyaudio==0.2.14
+sounddevice==0.5.1
+numpy==2.2.1
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.10.3
