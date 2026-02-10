@@ -1,5 +1,6 @@
 # Browser automation
 playwright==1.48.0
+playwright-stealth == 2.0.1
 
 # LLM
 openai==1.58.1

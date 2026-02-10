@@ -32,7 +32,7 @@ async def test_planner():
         # 2. Get initial page state
         state = await executor.get_page_state()
         await executor.take_screenshot("01_initial_state.png")
-        
+
         # 3. Test Case 1: Search query
         print("\n" + "="*60)
         print("TEST CASE 1: Search for 'Python tutorials'")
@@ -48,28 +48,28 @@ async def test_planner():
         await asyncio.sleep(3)
         await executor.take_screenshot("02_after_search.png")
         
-        # 4. Get new state
-        new_state = await executor.get_page_state()
-        print(f"\n📍 New URL: {new_state['url']}")
-        print(f"📄 New Title: {new_state['title']}")
+        # # 4. Get new state
+        # new_state = await executor.get_page_state()
+        # print(f"\n📍 New URL: {new_state['url']}")
+        # print(f"📄 New Title: {new_state['title']}")
         
-        # 5. Test Case 2: Navigate to a specific URL
-        print("\n" + "="*60)
-        print("TEST CASE 2: Go to GitHub")
-        print("="*60)
+        # # 5. Test Case 2: Navigate to a specific URL
+        # print("\n" + "="*60)
+        # print("TEST CASE 2: Go to GitHub")
+        # print("="*60)
         
-        user_input_2 = "go to github.com"
-        decision_2 = planner.decide(user_input_2, new_state)
+        # user_input_2 = "go to github"
+        # decision_2 = planner.decide(user_input_2, new_state)
         
-        result_2 = await executor.execute_action(decision_2['action'])
-        print(f"\n📊 Execution Result: {result_2}")
+        # result_2 = await executor.execute_action(decision_2['action'])
+        # print(f"\n📊 Execution Result: {result_2}")
         
-        await asyncio.sleep(3)
-        await executor.take_screenshot("03_github.png")
+        # await asyncio.sleep(3)
+        # await executor.take_screenshot("03_github.png")
         
-        print("\n" + "="*60)
-        print("✅ ALL TESTS COMPLETED")
-        print("="*60)
+        # print("\n" + "="*60)
+        # print("✅ ALL TESTS COMPLETED")
+        # print("="*60)
         
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
