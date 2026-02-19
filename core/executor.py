@@ -330,7 +330,7 @@ class Executor:
         typed = False
         for selector in selectors:
             try:
-                element = self.page.get_by_role(selector, name=target)
+                element = self.page.get_by_role(selector, name=target).first
 
                 if await element.count() > 0:
                     # await element.click()
