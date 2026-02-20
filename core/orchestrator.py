@@ -72,7 +72,9 @@ class Orchestrator:
                 # === OBSERVE ===
                 print("\n👀 OBSERVE: Getting current page state...")
                 current_state = await self.executor.get_page_state()
-                
+                # url_before = current_state.get('url', 'N/A')
+                url_before = current_state['url']
+
                 print(f"\n📊 Page State:")
                 print(f"   URL: {current_state['url']}")
                 print(f"   Title: {current_state['title']}")
@@ -123,6 +125,11 @@ class Orchestrator:
                 await asyncio.sleep(2)
                 await self.executor.take_screenshot(f"step_{step_num:02d}_after.png")
                 
+                try:
+                    url_after = self.executor.page.url if self.executor.page else "N/A"
+                except Exception:
+                    url_after = url_before
+
                 # === RECORD ===
                 self.action_history.append({
                     'step': step_num,
@@ -131,7 +138,10 @@ class Orchestrator:
                     'action': decision['action'],
                     'thought': decision['thought'],
                     'result': result,
-                    'plan_adjustment': decision.get('plan_adjustment')
+                    'plan_adjustment': decision.get('plan_adjustment'),
+                    'elements_before': current_state.get('interactive_elements', []),  # ← NEW
+                    'url_before': url_before,                                           # ← NEW
+                    'url_after': url_after,
                 })
                 
                 # === CHECK COMPLETION ===

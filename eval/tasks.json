@@ -1,0 +1,105 @@
+[
+  {
+    "id": "nav_001",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about the Python programming language",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Python",
+      "note": "url is the destination itself, url check is valid here"
+    }
+  },
+  {
+    "id": "nav_002",
+    "level": 1,
+    "goal": "Go to Hacker News",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com",
+      "note": "pure navigation, url check is valid"
+    }
+  },
+  {
+    "id": "nav_003",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about the Transformer neural network architecture",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Transformer",
+      "note": "url is the destination itself, url check is valid here"
+    }
+  },
+  {
+    "id": "search_001",
+    "level": 2,
+    "goal": "Find Nike's latest sustainability report and open the page that contains it",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page shows a Nike sustainability, impact, or ESG report — could be a PDF viewer, a report landing page, or a download page. FAILURE if the agent is on the Nike homepage, a general search results page, or any page that does not actually display or offer the report."
+    }
+  },
+  {
+    "id": "search_002",
+    "level": 2,
+    "goal": "Find OpenAI's research paper on RLHF (Reinforcement Learning from Human Feedback) and open it",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page displays an OpenAI paper, blog post, or PDF that is specifically about RLHF or training language models from human feedback. FAILURE if the agent is on a general OpenAI page, search results, or an unrelated paper."
+    }
+  },
+  {
+    "id": "search_003",
+    "level": 2,
+    "goal": "Find Anthropic's research page or paper about Constitutional AI and open it",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page shows an Anthropic research paper, blog post, or page that is specifically about Constitutional AI. FAILURE if the agent is on the Anthropic homepage, a general search page, or unrelated content."
+    }
+  },
+  {
+    "id": "search_004",
+    "level": 2,
+    "goal": "Find the arxiv paper 'Attention Is All You Need' and open it",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the arxiv abstract or PDF for the paper titled 'Attention Is All You Need' (the original Transformer paper by Vaswani et al.). FAILURE if the agent is on a search results page, a different paper, or any other page."
+    }
+  },
+  {
+    "id": "compare_001",
+    "level": 3,
+    "goal": "On Amazon, search for wooden pencils, sort results by price low to high, and open the cheapest one",
+    "start_url": "https://www.amazon.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the agent is on an Amazon product detail page (URL contains /dp/) for a pencil or pencil set, and it appears to be a low-priced item. FAILURE if still on search results, on the homepage, or on a product that is clearly not a pencil."
+    }
+  },
+  {
+    "id": "compare_002",
+    "level": 3,
+    "goal": "On Hacker News, find the article ranked number 1 and open it",
+    "start_url": "https://news.ycombinator.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the agent has navigated away from Hacker News to an external article page (the actual linked article, not a HN comments page). FAILURE if still on news.ycombinator.com or on a HN comments page (/item?id=...)."
+    }
+  },
+  {
+    "id": "compare_003",
+    "level": 3,
+    "goal": "Search for 'best free machine learning courses 2024' and open the most relevant result",
+    "start_url": "https://www.google.com",
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the agent is on a page that lists or describes free machine learning courses — such as a blog post, a course platform, or a curated list. FAILURE if still on Google search results or on a page unrelated to ML courses."
+    }
+  }
+]

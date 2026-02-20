@@ -172,7 +172,7 @@ Why?
 
 **Navigation Strategy:**
 
-Use 'goto' when:
+Use 'goto' instead of 'type' when:
 - You know the exact URL
 - Direct navigation is fastest
 - Example: "Visit Wikipedia" → goto wikipedia.org

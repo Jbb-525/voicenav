@@ -26,13 +26,13 @@ class Executor:
         self.playwright: Optional[Playwright] = None
         self.stealth_context = None
 
-        # Initialize vision analyzer if enabled
-        if self.use_vision:
-            from core.vision import VisionAnalyzer
-            self.vision = VisionAnalyzer()
-            print("🔍 Vision mode enabled")
-        else:
-            self.vision = None
+        # # Initialize vision analyzer if enabled
+        # if self.use_vision:
+        #     from core.vision import VisionAnalyzer
+        #     self.vision = VisionAnalyzer()
+        #     print("🔍 Vision mode enabled")
+        # else:
+        #     self.vision = None
         
     async def start(self, start_url: str = "https://www.google.com"):
         """
@@ -292,7 +292,7 @@ class Executor:
         clicked = False
         for selector in selectors:
             try:
-                element = self.page.get_by_role(selector, name=target)
+                element = self.page.get_by_role(selector, name=target).first
                 if await element.count() > 0:
                     clicked = await self._click_and_handle_new_tab(element, target)
                     if clicked:
@@ -395,63 +395,63 @@ class Executor:
             return ""
 
 
-    async def get_visual_analysis(
-        self,
-        user_goal: str,
-        current_state: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Use vision model to analyze page and identify target element
+    # async def get_visual_analysis(
+    #     self,
+    #     user_goal: str,
+    #     current_state: Dict[str, Any]
+    # ) -> Optional[Dict[str, Any]]:
+    #     """
+    #     Use vision model to analyze page and identify target element
         
-        Args:
-            user_goal: User's objective
-            current_state: Current page state with URL, title, elements
+    #     Args:
+    #         user_goal: User's objective
+    #         current_state: Current page state with URL, title, elements
             
-        Returns:
-            Vision analysis result or None
-        """
-        if not self.vision:
-            print("⚠️  Vision not enabled")
-            return None
+    #     Returns:
+    #         Vision analysis result or None
+    #     """
+    #     if not self.vision:
+    #         print("⚠️  Vision not enabled")
+    #         return None
         
-        try:
-            # Get screenshot
-            screenshot_base64 = await self.get_screenshot_base64()
+    #     try:
+    #         # Get screenshot
+    #         screenshot_base64 = await self.get_screenshot_base64()
             
-            if not screenshot_base64:
-                return None
+    #         if not screenshot_base64:
+    #             return None
             
-            # Prepare page info
-            page_info = {
-                'url': current_state.get('url', ''),
-                'title': current_state.get('title', ''),
-                'total_elements': len(current_state.get('interactive_elements', []))
-            }
+    #         # Prepare page info
+    #         page_info = {
+    #             'url': current_state.get('url', ''),
+    #             'title': current_state.get('title', ''),
+    #             'total_elements': len(current_state.get('interactive_elements', []))
+    #         }
             
-            # Analyze with vision
-            analysis = await self.vision.analyze_page(
-                screenshot_base64=screenshot_base64,
-                user_goal=user_goal,
-                page_info=page_info
-            )
+    #         # Analyze with vision
+    #         analysis = await self.vision.analyze_page(
+    #             screenshot_base64=screenshot_base64,
+    #             user_goal=user_goal,
+    #             page_info=page_info
+    #         )
             
-            if analysis:
-                # Try to match described element to AXTree
-                matched_element = self.vision.match_element_by_description(
-                    vision_desc=analysis,
-                    ax_elements=current_state.get('interactive_elements', [])
-                )
+    #         if analysis:
+    #             # Try to match described element to AXTree
+    #             matched_element = self.vision.match_element_by_description(
+    #                 vision_desc=analysis,
+    #                 ax_elements=current_state.get('interactive_elements', [])
+    #             )
                 
-                if matched_element:
-                    analysis['matched_element'] = matched_element
+    #             if matched_element:
+    #                 analysis['matched_element'] = matched_element
                 
-            return analysis
+    #         return analysis
             
-        except Exception as e:
-            print(f"❌ Visual analysis error: {e}")
-            import traceback
-            traceback.print_exc()
-            return None
+    #     except Exception as e:
+    #         print(f"❌ Visual analysis error: {e}")
+    #         import traceback
+    #         traceback.print_exc()
+    #         return None
         
     
     async def _action_select(self, params: Dict) -> Dict:

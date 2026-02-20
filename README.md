@@ -1,106 +1,160 @@
-# Development Log
+# Web Agent
 
-## Phase 1: Core Pipeline (Complete ✅)
+An LLM-powered web automation agent with a structured evaluation framework for diagnosing failure modes.
 
-### Date: Feb 2026
+## Architecture
 
-#### Accomplished
-1. **Project Setup**
-   - Created virtual environment
-   - Set up project structure
-   - Configured dependencies
+```
+User Goal
+    │
+    ▼
+┌─────────────────────────────────────────┐
+│              Orchestrator               │
+│         (Observe → Think → Act)         │
+│                                         │
+│  ┌──────────┐      ┌─────────────────┐  │
+│  │ Executor │      │     Planner     │  │
+│  │          │      │                 │  │
+│  │Playwright│      │ TextPlanner or  │  │
+│  │AXTree    │─────▶│ VisionPlanner   │  │
+│  │Screenshot│      │ (GPT-4o)        │  │
+│  └──────────┘      └─────────────────┘  │
+└─────────────────────────────────────────┘
+```
 
-2. **Executor Layer**
-   - Implemented browser automation with Playwright
-   - Built Accessibility Tree extraction
-   - Created 5 basic actions: goto, click, type, scroll, done
-   - Added screenshot capability
-   - Handled dynamic page states (e.g., dropdown menus)
+**Executor** (`core/executor.py`) — Manages a Playwright browser instance. Extracts page state via the Accessibility Tree (AXTree) and optionally screenshots. Supports actions: `goto`, `click`, `type`, `scroll`, `select`, `done`.
 
-3. **Planner Layer**
-   - Integrated GPT-4o-mini
-   - Designed Pydantic models for structured outputs
-   - Resolved OpenAI schema validation issues
-   - Created action type unions (GotoAction, ClickAction, etc.)
+**Planner** (`core/planner.py`) — Given the current page state and action history, uses an LLM to output a structured decision: a high-level milestone plan, the current step, a reasoning trace, and the next action.
 
-4. **Integration Testing**
-   - Successfully tested: "search for Python tutorials"
-   - Successfully tested: "go to github.com"
-   - Validated Planner → Executor pipeline
+- `TextPlanner` — AXTree only
+- `VisionPlanner` — AXTree + screenshot
 
-#### Key Challenges & Solutions
+**Orchestrator** (`core/orchestrator.py`) — Runs the OTA loop, records per-step snapshots (`elements_before`, `url_before`, `url_after`) needed for post-hoc evaluation.
 
-**Challenge 1: Accessibility Tree vs Raw HTML**
-- Problem: Should we use raw HTML or Accessibility Tree?
-- Solution: Chose Accessibility Tree for token efficiency and semantic clarity
-- Result: 10-50x reduction in tokens
+## Evaluation Framework
 
-**Challenge 2: Dynamic Page States**
-- Problem: Elements change after user input (e.g., search suggestions)
-- Solution: Use `submit=true` in type action instead of clicking buttons
-- Learning: Accessibility Tree is a snapshot; pages are dynamic
+Tasks are categorised by complexity:
 
-**Challenge 3: Pydantic Schema for OpenAI**
-- Problem: `'required' array including every key in properties` error
-- Solution: Used Union types for different action classes
-- Result: Clean, type-safe action definitions
+| Level | Type | Example | Checker |
+|-------|------|---------|---------|
+| 1 | Navigation | Go to Hacker News | `url_contains` |
+| 2 | Search & Retrieve | Find Nike sustainability report | `llm_judge` |
+| 3 | Compare & Select | Cheapest pencil on Amazon | `llm_judge` |
 
-**Challenge 4: Element Matching**
-- Problem: Finding elements by name from Accessibility Tree
-- Solution: Multiple fallback strategies using `get_by_role(role, name=name)`
-- Result: Robust element finding
+### Two-Layer Failure Attribution
 
-#### Technical Decisions
+Rather than reporting only a final success rate, every failed run is attributed to one of two layers:
 
-1. **Why GPT-4o-mini over Gemini?**
-   - More stable API
-   - Better structured output support
-   - Can switch later for comparison
+```
+Layer A — Reasoning
+  The model described a target that does not exist on the page,
+  or navigated in the wrong direction.
 
-2. **Why text input first?**
-   - Faster iteration
-   - Easier debugging
-   - Voice is just STT wrapper
+  Symptoms:
+    target_not_found   target string absent from AXTree elements
+    no_page_change     click succeeded but URL did not change
+    planning_failed    all steps executed cleanly but goal not met
 
-3. **Why Pydantic Union types?**
-   - OpenAI structured output compatibility
-   - Type safety
-   - Clear action schemas
+Layer B — Execution
+  The target was present in the AXTree but Playwright failed
+  to interact with it.
 
-#### Metrics
-- Lines of code: ~500
-- Test scenarios: 2
-- Success rate: 100% (when no CAPTCHA)
-- Token usage: ~1k tokens per decision
+  Error types (from raw Playwright errors):
+    timeout            element present but not ready in time
+    not_visible        element off-screen or hidden
+    element_detached   dynamic page replaced element mid-action
+    click_intercepted  element covered by overlay
+    ambiguous_target   name matched multiple elements
+```
 
----
+The attribution logic in `eval/diagnose.py`:
 
-## Phase 2: Multi-Step & Voice (In Progress 🔄)
+```
+For each failed step:
+  1. Fuzzy-match action.target against elements_before
+  2. Classify the raw error message → error_type
+  3. If matched AND error_type not in {element_not_found, ambiguous_target}
+       → Layer B  (found it, couldn't click it)
+     Else
+       → Layer A  (model got the target wrong)
+  4. If all steps succeeded but task still failed
+       → Layer A / planning_failed
+```
 
-### Goals
-- [ ] Build Orchestrator for multi-step tasks
-- [ ] Add voice input (Perceiver layer)
-- [ ] Implement task completion detection
-- [ ] Add error recovery
+### Success Checking
 
-### Next Steps
-1. Design Orchestrator loop logic
-2. Add conversation history/context
-3. Test complex tasks (e.g., "search and click first result")
-4. Integrate Deepgram for voice input
+`url_contains` is only used when the URL itself *is* the goal (Level 1 navigation tasks). All other tasks use an LLM judge (GPT-4o) that reads the **final screenshot from disk** — the browser session is already closed at judgment time.
 
----
+```python
+# screenshots are archived per-task after each run
+screenshots/
+  nav_001/step_01_after.png ...
+  search_001/step_03_after.png ...
+```
 
-## Future Phases
+## Setup
 
-### Phase 3: Production Backend
-- FastAPI server
-- WebSocket for real-time updates
-- Multi-session management
-- Rate limiting and auth
+```bash
+pip install playwright openai playwright-stealth python-dotenv
+playwright install chromium
 
-### Phase 4: Frontend
-- Next.js UI
-- Microphone button
-- Live action stream
-- Screenshot gallery
+cp .env.example .env   # add OPENAI_API_KEY
+```
+
+## Usage
+
+```bash
+# run full eval
+python -m eval.runner
+
+# single task (useful for debugging)
+python -m eval.runner --task compare_001
+
+# level filter
+python -m eval.runner --level 2
+
+# stronger model
+python -m eval.runner --model gpt-4o --steps 15
+```
+
+## Sample Report Output
+
+```
+══════════════════════════════════════════════════════════════
+EVALUATION REPORT 202602200542
+══════════════════════════════════════════════════════════════
+Total Tasks:    10
+Success Rate:   50%  (5/10)
+
+By Level:
+  Level 1: 3/3 = 100%  ✅
+  Level 2: 2/4 =  50%  ⚠️
+  Level 3: 0/3 =   0%  ❌
+
+Failure Attribution (5 failures):
+  Layer A (Reasoning):  4  (80%)  → fix prompt / observation
+  Layer B (Execution):  1  (20%)  → fix executor / wait strategy
+
+Layer B error type breakdown:
+  timeout          2  → increase wait time
+  not_visible      1  → scroll or viewport issue
+  element_detached 1  → dynamic page, add explicit wait
+══════════════════════════════════════════════════════════════
+```
+
+## Project Structure
+
+```
+core/
+  executor.py       browser control, AXTree extraction, screenshot
+  planner.py        TextPlanner, VisionPlanner, action schema
+  orchestrator.py   OTA loop, per-step recording
+
+eval/
+  tasks.json        10 benchmark tasks across 3 levels
+  diagnose.py       two-layer attribution, fuzzy matching, error classification
+  runner.py         batch runner, success checker, report generation
+
+prompt/
+  system_prompt.md  agent system prompt
+```

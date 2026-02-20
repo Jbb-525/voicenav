@@ -16,13 +16,14 @@ from core.orchestrator import Orchestrator
 async def test_with_vision():
     """Test with VisionPlanner"""
     executor = Executor(headless=False)
-    planner = VisionPlanner(model="gpt-4o")  # ← 使用 VisionPlanner
+    planner = VisionPlanner(model="gpt-4o-mini")  # ← 使用 VisionPlanner
     orchestrator = Orchestrator(executor, planner)
     
     print("\n📝 Test: Complex task with VisionPlanner")
     
     result = await orchestrator.run(
-        user_goal="find the cheapest toothbrush on Amazon",
+        user_goal="find a sustainability report from nike",
+        # user_goal="find the cheapest toothbrush on Amazon",
         start_url="https://www.google.com",
         max_steps=10
     )
@@ -33,7 +34,7 @@ async def test_with_vision():
 async def test_search_task():
     """Test search with TextPlanner"""
     executor = Executor(headless=False)
-    planner = TextPlanner(model="gpt-4o-mini")  # ← 使用 TextPlanner
+    planner = VisionPlanner(model="gpt-4o-mini")  # ← 使用 TextPlanner
     orchestrator = Orchestrator(executor, planner)
     
     print("\n📝 Test: Search and click first result")
@@ -51,7 +52,7 @@ async def test_search_task():
 async def test_without_vision():
     """Test complex task without vision assistance"""
     executor = Executor(headless=False)
-    planner = TextPlanner(model="gpt-4o")
+    planner = TextPlanner(model="gpt-4o-mini")
     orchestrator = Orchestrator(executor, planner)
     
     print("\n" + "="*60)
@@ -61,7 +62,7 @@ async def test_without_vision():
     print("\n📝 Test: Find cheapest product on Amazon")
     
     result = await orchestrator.run(
-        user_goal="find the cheapest toothbrush on Amazon",
+        user_goal="find a sustainability report from nike",
         start_url="https://www.google.com",
         max_steps=10  # More steps for complex task
     )
