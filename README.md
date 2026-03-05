@@ -146,79 +146,31 @@ Controlled experiment — 50 tasks across 3 levels, same max steps, same LLM jud
 
 | | Text | Vision | Δ |
 |---|---|---|---|
-| Overall success rate | 61% | 78% | **+17pp** |
-| Level 1 — Navigation | 89% | 94% | +5pp |
-| Level 2 — Search & Retrieve | 67% | 83% | +16pp |
-| Level 3 — Compare & Select | 31% | 41% | +10pp |
+| Overall success rate | 60% | 78% | **+17pp** |
+| Level 1 — Navigation | 88% | 94% | +5pp |
+| Level 2 — Search & Retrieve | 66% | 84% | +16pp |
+| Level 3 — Compare & Select | 30% | 50% | +10pp |
 | Avg cost / task | $0.005 | $0.033 | 6.8× |
 | Avg LLM calls / task | 8.2 | 5.1 | −3.1 |
 | Avg wall time / task (s) | 85.9 | 66.4 | −19.5s |
-| Layer A failures | 84% | 81% | — |
-| Layer B failures | 16% | 19% | — |
 
 **Failure symptom breakdown:**
 
 | Symptom | Text | Vision |
 |---------|------|--------|
-| `target_not_found` | 41% | 17% |
-| `planning_failed` | 33% | 52% |
+| `target_not_found` | 40% | 18% |
+| `planning_failed` | 34% | 56% |
 | `no_page_change` | 10% | 8% |
-| `timeout` / other (Layer B) | 16% | 19% |
+| `timeout` / other (Layer B) | 16% | 18% |
 
 ### Analysis
 
 Vision input eliminates the majority of `target_not_found` errors on Level 1–2 tasks — the model can see the page and ground its actions correctly without relying purely on AXTree element names. This explains the +17pp overall improvement and the reduced LLM call count (fewer failed retries).
 
-Level 3 shows a smaller but real improvement (+10pp). However, `planning_failed` becomes the dominant failure mode for VisionPlanner at Level 3 — every individual action executes without error, but the agent ends up on the wrong page. This means the remaining bottleneck is **multi-step decision-making**: the model cannot reliably sequence actions toward a goal that requires comparison or conditional reasoning across multiple pages.
+Level 3 shows a smaller but real improvement. However, `planning_failed` becomes the dominant failure mode for VisionPlanner at Level 3 — every individual action executes without error, but the agent ends up on the wrong page. This means the remaining bottleneck is **multi-step decision-making**: the model cannot reliably sequence actions toward a goal that requires comparison or conditional reasoning across multiple pages.
 
 Providing a screenshot helps with grounding but does not solve planning. The remaining gap requires a different approach — the agent needs either a better planning mechanism or the ability to learn from past trajectories.
 
-
-## Using Eval Results to Improve the System
-
-The Layer A / Layer B split tells you **which component to fix first**. Decision tree:
-
-```
-Overall success rate unsatisfactory
-        │
-        ├─ Layer A dominant
-        │       │
-        │       ├─ symptom = target_not_found
-        │       │     → Prompt: instruct model to copy element names
-        │       │       verbatim from AXTree; add menuitem/option to
-        │       │       click selector list in executor.py; increase
-        │       │       top-N element limit in planner.py
-        │       │
-        │       ├─ symptom = no_page_change
-        │       │     → Prompt: teach model to prefer navigable
-        │       │       links/buttons; add "URL unchanged" signal
-        │       │       to action history feedback
-        │       │
-        │       └─ symptom = planning_failed
-        │             → Prompt: tighten milestone definitions;
-        │               add explicit verification step to system
-        │               prompt; consider VisionPlanner for tasks
-        │               requiring visual confirmation
-        │
-        └─ Layer B dominant
-                │
-                ├─ timeout / element_detached
-                │     → Executor: increase slow_mo or per-action
-                │       wait; add retry with backoff
-                │
-                ├─ not_visible
-                │     → Executor: scroll element into view before
-                │       interacting; expand viewport
-                │
-                ├─ click_intercepted
-                │     → Executor: dismiss overlays before clicking;
-                │       fall back to JS click
-                │
-                └─ ambiguous_target
-                      → Prompt: include role or position hint in
-                        target description; tighten get_by_role
-                        matching in executor
-```
 ### Next Steps
 
 The author is exploring this planning problem in a separate project: **[Web World Model](https://github.com/Jbb-525/webworldmodel)** — a learned world model for web navigation that predicts state transitions to guide agent decisions, directly targeting the `planning_failed` failure mode identified here.
