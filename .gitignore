@@ -11,6 +11,12 @@ __pycache__/
 dist/
 build/
 
+# Eval results (keep task definitions, ignore run outputs)
+eval/results/
+eval/tasks.json
+!eval/tasks_10.json
+!eval/tasks_open.json
+
 # Environment variables
 .env
 
@@ -30,3 +36,5 @@ screenshots/
 
 # Logs
 *.log.claude/
+
+.claude/

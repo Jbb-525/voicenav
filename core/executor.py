@@ -501,66 +501,6 @@ class Executor:
         except Exception as e:
             print(f"❌ Screenshot capture failed: {e}")
             return ""
-
-
-    # async def get_visual_analysis(
-    #     self,
-    #     user_goal: str,
-    #     current_state: Dict[str, Any]
-    # ) -> Optional[Dict[str, Any]]:
-    #     """
-    #     Use vision model to analyze page and identify target element
-        
-    #     Args:
-    #         user_goal: User's objective
-    #         current_state: Current page state with URL, title, elements
-            
-    #     Returns:
-    #         Vision analysis result or None
-    #     """
-    #     if not self.vision:
-    #         print("⚠️  Vision not enabled")
-    #         return None
-        
-    #     try:
-    #         # Get screenshot
-    #         screenshot_base64 = await self.get_screenshot_base64()
-            
-    #         if not screenshot_base64:
-    #             return None
-            
-    #         # Prepare page info
-    #         page_info = {
-    #             'url': current_state.get('url', ''),
-    #             'title': current_state.get('title', ''),
-    #             'total_elements': len(current_state.get('interactive_elements', []))
-    #         }
-            
-    #         # Analyze with vision
-    #         analysis = await self.vision.analyze_page(
-    #             screenshot_base64=screenshot_base64,
-    #             user_goal=user_goal,
-    #             page_info=page_info
-    #         )
-            
-    #         if analysis:
-    #             # Try to match described element to AXTree
-    #             matched_element = self.vision.match_element_by_description(
-    #                 vision_desc=analysis,
-    #                 ax_elements=current_state.get('interactive_elements', [])
-    #             )
-                
-    #             if matched_element:
-    #                 analysis['matched_element'] = matched_element
-                
-    #         return analysis
-            
-    #     except Exception as e:
-    #         print(f"❌ Visual analysis error: {e}")
-    #         import traceback
-    #         traceback.print_exc()
-    #         return None
-        
     
     async def _action_select(self, params: Dict) -> Dict:
         """Select option from dropdown/combobox"""
@@ -570,173 +510,125 @@ class Executor:
         if not dropdown or not option:
             return {'success': False, 'error': 'Missing dropdown or option parameter'}
         
+        async def find_option() -> any:
+            """Try all strategies to find the option element"""
+            finders = [
+                lambda: self.page.get_by_role("option", name=option).first,
+                lambda: self.page.get_by_role("menuitemradio", name=option).first,
+                lambda: self.page.get_by_role("menuitem", name=option).first,
+                lambda: self.page.locator(f'[role="option"]:has-text("{option}")').first,
+                lambda: self.page.locator(f'li:has-text("{option}")').first,
+                lambda: self.page.get_by_text(option, exact=True).first,
+            ]
+            for finder in finders:
+                try:
+                    el = finder()
+                    if await el.count() > 0:
+                        return el
+                except:
+                    continue
+            return None
+
         try:
             print(f"\n⚡ Executing Action: select")
             print(f"   Details: {params}")
-            
-            # Step 1: Find the combobox/select element
+
+            # ── Step 1: check if dropdown is already open ────────────
+            option_element = await find_option()
+            if option_element:
+                print(f"   ✓ Dropdown already open, found option directly")
+                await option_element.click(timeout=5000)
+                await asyncio.sleep(1)
+                print(f"✅ Selected '{option}' from '{dropdown}'")
+                return {'success': True, 'message': f'Selected {option} from {dropdown}'}
+
+            # ── Step 2: find the combobox ────────────────────────────
             combobox = None
-            
-            # Try different strategies to find combobox
-            strategies = [
-                ('combobox', dropdown),
-                ('listbox', dropdown),
-                ('button', dropdown),
-            ]
-            
-            for role, name in strategies:
+            for role, name in [('combobox', dropdown), ('listbox', dropdown), ('button', dropdown)]:
                 try:
-                    element = self.page.get_by_role(role, name=name).first
-                    if await element.count() > 0:
-                        combobox = element
+                    el = self.page.get_by_role(role, name=name).first
+                    if await el.count() > 0:
+                        combobox = el
                         print(f"   ✓ Found dropdown: [{role}] {name}")
                         break
                 except:
                     continue
-            
-            if not combobox:
-                return {
-                    'success': False, 
-                    'error': f'Dropdown not found: {dropdown}'
-                }
-            
-            # Check if it's a native <select> element
-            try:
-                tag_name = await combobox.evaluate('el => el.tagName.toLowerCase()')
-                
-                if tag_name == 'select':
-                    # Native select element - use select_option method
-                    print(f"   ℹ️  Native <select> detected")
-                    
-                    try:
-                        await combobox.scroll_into_view_if_needed(timeout=3000)
-                    except:
-                        pass
-                    
-                    # Try different selection methods
-                    selected = False
-                    
-                    # Method 1: By label (most reliable)
-                    try:
-                        await combobox.select_option(label=option, timeout=5000)
-                        selected = True
-                        print(f"   ✓ Selected by label: {option}")
-                    except:
-                        pass
-                    
-                    # Method 2: By value (if label fails)
-                    if not selected:
-                        try:
-                            await combobox.select_option(value=option, timeout=5000)
-                            selected = True
-                            print(f"   ✓ Selected by value: {option}")
-                        except:
-                            pass
-                    
-                    # Method 3: By index (last resort - find matching text)
-                    if not selected:
-                        try:
-                            # Get all options
-                            options_elements = await combobox.locator('option').all()
-                            for idx, opt in enumerate(options_elements):
-                                text = await opt.text_content()
-                                if option.lower() in text.lower():
-                                    await combobox.select_option(index=idx, timeout=5000)
-                                    selected = True
-                                    print(f"   ✓ Selected by index {idx}: {text}")
-                                    break
-                        except:
-                            pass
-                    
-                    
-                    if not selected:
-                        return {
-                            'success': False,
-                            'error': f'Could not select option: {option}'
-                        }
-                    
-                    # Wait for selection to take effect
-                    await asyncio.sleep(1.5)
-                    
-                    print(f"✅ Selected '{option}' from '{dropdown}'")
-                    
-                    return {
-                        'success': True,
-                        'message': f'Selected {option} from {dropdown}'
-                    }
-                
-                else:
-                    # Custom dropdown - use click method
-                    print(f"   ℹ️  Custom dropdown (tag: {tag_name})")
-                    
-                    # Click to open dropdown
-                    try:
-                        await combobox.scroll_into_view_if_needed(timeout=3000)
-                    except:
-                        pass
-                    
-                    await combobox.click(timeout=5000)
-                    print(f"   ✓ Opened dropdown")
-                    
-                    # Wait for dropdown to open
-                    await asyncio.sleep(0.5)
-                    
-                    # Find and click the option
-                    option_element = None
-                    
-                    try:
-                        element = self.page.get_by_role("option", name=option).first
-                        if await element.count() > 0:
-                            option_element = element
-                    except:
-                        pass
-                    
-                    if not option_element:
-                        try:
-                            element = self.page.locator(f'[role="option"]:has-text("{option}")').first
-                            if await element.count() > 0:
-                                option_element = element
-                        except:
-                            pass
 
-                    if not option_element:
-                        try:
-                            element = self.page.get_by_role("menuitemradio", name=option).first
-                            if await element.count() > 0:
-                                option_element = element
-                                print(f"   ✓ Found option by menuitemradio: {option}")
-                        except:
-                            pass
-                    
-                    if not option_element:
-                        return {
-                            'success': False,
-                            'error': f'Option not found: {option}'
-                        }
-                    
-                    await option_element.click(timeout=5000)
-                    print(f"   ✓ Selected option: {option}")
-                    
-                    await asyncio.sleep(1)
-                    
-                    print(f"✅ Selected '{option}' from '{dropdown}'")
-                    
-                    return {
-                        'success': True,
-                        'message': f'Selected {option} from {dropdown}'
-                    }
-            
-            except Exception as e:
-                error_msg = f'Select operation failed: {str(e)}'
-                print(f"   ❌ {error_msg}")
-                return {'success': False, 'error': error_msg}
-            
+            if not combobox:
+                return {'success': False, 'error': f'Dropdown not found: {dropdown}'}
+
+            # ── Step 3: native <select> ──────────────────────────────
+            tag_name = await combobox.evaluate('el => el.tagName.toLowerCase()')
+
+            if tag_name == 'select':
+                print(f"   ℹ️  Native <select> detected")
+                try:
+                    await combobox.scroll_into_view_if_needed(timeout=3000)
+                except:
+                    pass
+
+                selected = False
+                for method, kwargs in [
+                    ('label', {'label': option}),
+                    ('value', {'value': option}),
+                ]:
+                    if selected:
+                        break
+                    try:
+                        await combobox.select_option(**kwargs, timeout=5000)
+                        selected = True
+                        print(f"   ✓ Selected by {method}: {option}")
+                    except:
+                        pass
+
+                # fallback: match by text across all <option> elements
+                if not selected:
+                    try:
+                        for idx, opt in enumerate(await combobox.locator('option').all()):
+                            text = await opt.text_content()
+                            if option.lower() in text.lower():
+                                await combobox.select_option(index=idx, timeout=5000)
+                                selected = True
+                                print(f"   ✓ Selected by index {idx}: {text}")
+                                break
+                    except:
+                        pass
+
+                if not selected:
+                    return {'success': False, 'error': f'Could not select option: {option}'}
+
+                await asyncio.sleep(1.5)
+                print(f"✅ Selected '{option}' from '{dropdown}'")
+                return {'success': True, 'message': f'Selected {option} from {dropdown}'}
+
+            # ── Step 4: custom dropdown — open then find ─────────────
+            print(f"   ℹ️  Custom dropdown (tag: {tag_name})")
+            try:
+                await combobox.scroll_into_view_if_needed(timeout=3000)
+            except:
+                pass
+
+            await combobox.click(timeout=5000)
+            print(f"   ✓ Opened dropdown")
+            await asyncio.sleep(0.5)
+
+            option_element = await find_option()
+            if not option_element:
+                return {'success': False, 'error': f'Option not found: {option}'}
+
+            await option_element.click(timeout=5000)
+            print(f"   ✓ Selected option: {option}")
+            await asyncio.sleep(1)
+            print(f"✅ Selected '{option}' from '{dropdown}'")
+            return {'success': True, 'message': f'Selected {option} from {dropdown}'}
+
         except Exception as e:
-            error_msg = f'Select failed: {str(e)}'
-            print(f"   ❌ {error_msg}")
-            return {'success': False, 'error': error_msg}
+            print(f"   ❌ Select failed: {e}")
+            return {'success': False, 'error': f'Select failed: {str(e)}'}
+
 
     async def _action_done(self, params: Dict) -> Dict:
         """Task completion action"""
         print("✅ Task marked as done")
         return {'success': True, 'message': 'Task completed'}
+

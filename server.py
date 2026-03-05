@@ -68,7 +68,7 @@ async def _run_task(
 ):
     """Run the orchestrator for a task and stream events."""
     _tasks[task_id]["status"] = "running"
-    executor = Executor(headless=False, frame_queue=frame_queue)
+    executor = Executor(headless=True, frame_queue=frame_queue)
     _tasks[task_id]["executor"] = executor  # expose for input forwarding
     planner = VisionPlanner()
     orchestrator = Orchestrator(executor=executor, planner=planner, event_queue=event_queue)
