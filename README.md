@@ -175,30 +175,6 @@ Providing a screenshot helps with grounding but does not solve planning. The rem
 
 The author is exploring this planning problem in a separate project: **[Web World Model](https://github.com/Jbb-525/webworldmodel)** — a learned world model for web navigation that predicts state transitions to guide agent decisions, directly targeting the `planning_failed` failure mode identified here.
 
-## Setup
-
-```bash
-pip install playwright openai playwright-stealth python-dotenv
-playwright install chromium
-
-cp .env.example .env   # add OPENAI_API_KEY
-```
-
-## Usage
-
-```bash
-# run full eval
-python -m eval.runner
-
-# single task (useful for debugging)
-python -m eval.runner --task compare_001
-
-# level filter
-python -m eval.runner --level 2
-
-# stronger model
-python -m eval.runner --model gpt-4o --steps 15
-```
 
 ## Demo
 https://github.com/user-attachments/assets/41545491-24c7-434e-afb5-c143d0b7a8bf
