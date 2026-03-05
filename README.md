@@ -2,13 +2,6 @@
 
 An LLM-powered browser automation agent with a structured evaluation framework for diagnosing and improving failure modes.
 
-## Demo
-
-<!-- Replace the link below with your video demo URL -->
-> 📹 **[Video Demo](#)** — *(upload your demo video and replace `#` with the link)*
-
----
-
 ## Architecture
 
 ```
@@ -65,35 +58,6 @@ Browser (React UI)
 | Styling | CSS Modules | Scoped styles, dark theme |
 | Transport | WebSocket (native) | Receive frames + events, send input back |
 | Persistence | localStorage | Task history across sessions |
-
-### Core Modules
-
-```
-core/
-  executor.py       Browser control — AXTree extraction, CDP screencast,
-                    CDP input dispatch (click/key forwarding from web UI)
-  planner.py        TextPlanner, VisionPlanner — structured output via
-                    OpenAI function calling, Pydantic action schema
-  orchestrator.py   OTA loop — per-step event emission, CAPTCHA detection,
-                    failure-count circuit breaker, event_queue streaming
-
-eval/
-  runner.py         Batch evaluation — success checkers, LLM-as-judge,
-                    screenshot archiving, report generation
-  diagnose.py       Two-layer failure attribution, fuzzy matching,
-                    error classification
-  tasks_10.json     10-task benchmark across 3 complexity levels
-  tasks_open.json   Extended open-ended task set
-  ablation.py       Ablation study tooling
-
-prompt/
-  system_prompt.md  Hierarchical planning system prompt
-
-server.py           FastAPI entrypoint — task registry, WebSocket multiplexer
-frontend/           React app (pages/, components/, CSS Modules)
-```
-
----
 
 ## Setup
 
@@ -283,6 +247,9 @@ python -m eval.runner --level 2
 # stronger model
 python -m eval.runner --model gpt-4o --steps 15
 ```
+
+## Demo
+https://github.com/user-attachments/assets/41545491-24c7-434e-afb5-c143d0b7a8bf
 
 ## Project Structure
 
