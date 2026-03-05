@@ -249,7 +249,7 @@ async def run_eval(
     tasks_path: str = "eval/tasks.json",
     level_filter: Optional[int] = None,
     task_id_filter: Optional[str] = None,
-    model: str = "gpt-4o-mini",
+    model: str = "gpt-4o",
     max_steps: int = 10,
     headless: bool = True,
     output_dir: str = "eval/results"

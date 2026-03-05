@@ -1,0 +1,125 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 44px;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.textarea,
+.input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+
+.textarea:focus,
+.input:focus {
+  border-color: var(--accent);
+}
+
+.textarea { min-height: 80px; }
+
+.button {
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.button:hover:not(:disabled) { background: var(--accent-hover); }
+.button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error {
+  color: var(--red);
+  font-size: 13px;
+}
+
+.hint {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: 4px;
+}

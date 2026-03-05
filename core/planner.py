@@ -642,7 +642,7 @@ Analyze the situation and provide your decision."""
         else:
             elements_text = "\n".join([
                 f"  [{elem['role']}] name: '{elem['name']}'{f', value: \"{elem['value']}\"' if elem.get('value') else ''}"
-                for elem in elements[:50]  # Limit to first 50
+                for elem in elements  # Limit to first 50
             ])
         
         footer = ""

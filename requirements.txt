@@ -13,6 +13,10 @@ deepgram-sdk==5.3.2
 sounddevice==0.5.1
 numpy==2.2.1
 
+# Web server
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+
 # Utilities
 python-dotenv==1.0.1
 pydantic==2.10.3

@@ -1,7 +1,7 @@
 """
 Orchestrator: Manages the Observe-Think-Act loop for multi-step task execution
 """
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Optional, Union
 import asyncio
 from core.executor import Executor
 from core.planner import TextPlanner, VisionPlanner
@@ -11,22 +11,30 @@ class Orchestrator:
     """
     Orchestrates multi-step web automation tasks using the OTA (Observe-Think-Act) loop
     """
-    
+
     def __init__(
-        self, 
-        executor: Executor, 
-        planner: Union[TextPlanner, VisionPlanner]
+        self,
+        executor: Executor,
+        planner: Union[TextPlanner, VisionPlanner],
+        event_queue: Optional[asyncio.Queue] = None,
     ):
         """
         Initialize orchestrator
-        
+
         Args:
             executor: Browser executor instance
             planner: TextPlanner or VisionPlanner instance
+            event_queue: Optional queue for streaming execution events to a WebSocket
         """
         self.executor = executor
         self.planner = planner
+        self.event_queue = event_queue
         self.action_history: List[Dict[str, Any]] = []
+
+    async def _emit(self, event: Dict[str, Any]):
+        """Put an event into the event_queue if one is set."""
+        if self.event_queue is not None:
+            await self.event_queue.put(event)
     
     async def run(
         self,
@@ -62,46 +70,45 @@ class Orchestrator:
             # Start browser and navigate
             await self.executor.start(start_url)
             await asyncio.sleep(2)
-            
+
             # OTA Loop
             for step_num in range(1, max_steps + 1):
                 print(f"\n{'='*60}")
                 print(f"📍 STEP {step_num}/{max_steps}")
                 print(f"{'='*60}")
-                
+
                 # === OBSERVE ===
                 print("\n👀 OBSERVE: Getting current page state...")
                 current_state = await self.executor.get_page_state()
-                # url_before = current_state.get('url', 'N/A')
                 url_before = current_state['url']
 
                 print(f"\n📊 Page State:")
                 print(f"   URL: {current_state['url']}")
                 print(f"   Title: {current_state['title']}")
                 print(f"   Interactive Elements: {len(current_state.get('interactive_elements', []))}")
-                
+
                 await self.executor.take_screenshot(f"step_{step_num:02d}_before.png")
-                
+
                 # === CHECK FOR CAPTCHA ===
                 if self._is_captcha_page(current_state):
                     solved = await self._handle_captcha(current_state, step_num)
                     if not solved:
+                        await self._emit({"type": "error", "message": "CAPTCHA timeout"})
                         return {
                             'success': False,
                             'error': 'CAPTCHA timeout',
                             'steps_taken': step_num,
                             'history': self.action_history
                         }
-                    
+
                     # Get updated state after CAPTCHA
                     current_state = await self.executor.get_page_state()
                     await self.executor.take_screenshot(f"step_{step_num:02d}_captcha_solved.png")
-                
+
                 # === THINK ===
                 print("\n🤔 THINK: Planning next action...")
-                
+
                 if isinstance(self.planner, VisionPlanner):
-                    # VisionPlanner needs screenshot
                     screenshot = await self.executor.get_screenshot_base64()
                     decision = self.planner.decide(
                         user_goal=user_goal,
@@ -110,102 +117,151 @@ class Orchestrator:
                         screenshot_base64=screenshot
                     )
                 else:
-                    # TextPlanner uses only AXTree
                     decision = self.planner.decide(
                         user_goal=user_goal,
                         page_state=current_state,
                         action_history=self.action_history
                     )
-                
+
+                # Emit thinking event
+                await self._emit({
+                    "type": "thinking",
+                    "step": step_num,
+                    "thought": decision.get("thought", ""),
+                    "overall_plan": decision.get("overall_plan", []),
+                    "current_step": decision.get("current_step", 0),
+                    "plan_adjustment": decision.get("plan_adjustment"),
+                })
+
                 # === ACT ===
                 print(f"\n⚡ ACT: Executing action...")
-                result = await self.executor.execute_action(decision['action'])
+                action = decision['action']
+
+                # Emit action event
+                await self._emit({
+                    "type": "action",
+                    "step": step_num,
+                    "action": action,
+                })
+
+                result = await self.executor.execute_action(action)
                 print(f"📊 Result: {result}")
-                
+
                 await asyncio.sleep(2)
                 await self.executor.take_screenshot(f"step_{step_num:02d}_after.png")
-                
+
                 try:
                     url_after = self.executor.page.url if self.executor.page else "N/A"
                 except Exception:
                     url_after = url_before
+
+                # Emit result event
+                await self._emit({
+                    "type": "result",
+                    "step": step_num,
+                    "success": result['success'],
+                    "message": result.get('message') or result.get('error', ''),
+                    "url": url_after,
+                })
 
                 # === RECORD ===
                 self.action_history.append({
                     'step': step_num,
                     'overall_plan': decision.get('overall_plan', []),
                     'current_step': decision.get('current_step', 0),
-                    'action': decision['action'],
+                    'action': action,
                     'thought': decision['thought'],
                     'result': result,
                     'plan_adjustment': decision.get('plan_adjustment'),
-                    'elements_before': current_state.get('interactive_elements', []),  # ← NEW
-                    'url_before': url_before,                                           # ← NEW
+                    'elements_before': current_state.get('interactive_elements', []),
+                    'url_before': url_before,
                     'url_after': url_after,
                 })
-                
+
                 # === CHECK COMPLETION ===
-                if decision['action']['type'] == 'done':
+                if action['type'] == 'done':
                     print(f"\n{'='*60}")
                     print("✅ TASK COMPLETED!")
                     print(f"{'='*60}")
                     print(f"Total steps: {step_num}")
                     print(f"Final URL: {current_state['url']}")
-                    
+
+                    await self._emit({
+                        "type": "done",
+                        "success": True,
+                        "steps": step_num,
+                        "final_url": current_state['url'],
+                    })
+
                     return {
                         'success': True,
                         'steps_taken': step_num,
                         'final_url': current_state['url'],
                         'history': self.action_history
                     }
-                
+
                 # === CHECK FOR REPEATED FAILURES ===
                 if not result['success']:
-                    # Count consecutive failures from the end
                     consecutive_failures = 0
                     for entry in reversed(self.action_history):
                         if not entry['result']['success']:
                             consecutive_failures += 1
                         else:
-                            break  # Stop at first success
-                    
+                            break
+
                     if consecutive_failures >= 3:
                         print(f"\n{'='*60}")
                         print("⚠️ TOO MANY CONSECUTIVE FAILURES")
                         print(f"{'='*60}")
                         print("Stopping to prevent infinite loop")
-                        
+
+                        await self._emit({
+                            "type": "done",
+                            "success": False,
+                            "steps": step_num,
+                            "error": "Too many consecutive failures",
+                        })
+
                         return {
                             'success': False,
                             'error': 'Too many consecutive failures',
                             'steps_taken': step_num,
                             'history': self.action_history
                         }
-            
+
             # Max steps reached
             print(f"\n{'='*60}")
             print("⚠️ MAX STEPS REACHED")
             print(f"{'='*60}")
-            
+
+            await self._emit({
+                "type": "done",
+                "success": False,
+                "steps": max_steps,
+                "error": f"Max steps ({max_steps}) reached",
+            })
+
             return {
                 'success': False,
                 'error': f'Max steps ({max_steps}) reached',
                 'steps_taken': max_steps,
                 'history': self.action_history
             }
-            
+
         except Exception as e:
             print(f"\n❌ ORCHESTRATOR ERROR: {e}")
             import traceback
             traceback.print_exc()
-            
+
+            await self._emit({"type": "error", "message": str(e)})
+
             return {
                 'success': False,
                 'error': str(e),
                 'steps_taken': len(self.action_history),
                 'history': self.action_history
             }
-            
+
         finally:
             await asyncio.sleep(2)
             await self.executor.stop()
@@ -225,7 +281,8 @@ class Orchestrator:
         print("   (Auto-detecting every 5 seconds, max wait: 120s)")
         
         await self.executor.take_screenshot(f"captcha_step_{step_num:02d}.png")
-        
+        await self._emit({"type": "captcha", "url": page_state['url']})
+
         # Wait for CAPTCHA to be solved
         max_wait = 120
         check_interval = 5

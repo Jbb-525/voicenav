@@ -1,0 +1,541 @@
+[
+  {
+    "id": "wiki_nav_001",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about the Python programming language",
+    "start_url": "https://www.google.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Python_(programming_language)"
+    }
+  },
+  {
+    "id": "wiki_nav_002",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about the Transformer neural network architecture",
+    "start_url": "https://www.google.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Transformer"
+    }
+  },
+  {
+    "id": "wiki_nav_003",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about Alan Turing",
+    "start_url": "https://www.google.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Alan_Turing"
+    }
+  },
+  {
+    "id": "wiki_nav_004",
+    "level": 1,
+    "goal": "Navigate directly to the Wikipedia main page",
+    "start_url": "https://www.google.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org"
+    }
+  },
+  {
+    "id": "wiki_nav_005",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about Reinforcement Learning",
+    "start_url": "https://www.google.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Reinforcement_learning"
+    }
+  },
+  {
+    "id": "hn_nav_001",
+    "level": 1,
+    "goal": "Go to Hacker News",
+    "start_url": "https://www.google.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com"
+    }
+  },
+  {
+    "id": "hn_nav_002",
+    "level": 1,
+    "goal": "Go to the Hacker News 'Ask HN' section",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com/ask"
+    }
+  },
+  {
+    "id": "hn_nav_003",
+    "level": 1,
+    "goal": "Go to the Hacker News 'Show HN' section",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com/show"
+    }
+  },
+  {
+    "id": "arxiv_nav_001",
+    "level": 1,
+    "goal": "Go to arxiv.org",
+    "start_url": "https://www.google.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "arxiv.org"
+    }
+  },
+  {
+    "id": "arxiv_nav_002",
+    "level": 1,
+    "goal": "Go to the arxiv cs.AI section",
+    "start_url": "https://arxiv.org",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "arxiv.org/list/cs.AI"
+    }
+  },
+  {
+    "id": "wiki_search_001",
+    "level": 2,
+    "goal": "Search Wikipedia for 'Large Language Model' and open the article",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Large_language_model"
+    }
+  },
+  {
+    "id": "wiki_search_002",
+    "level": 2,
+    "goal": "Find the Wikipedia article about BERT (language model) and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the Wikipedia article specifically about BERT (the language model by Google). FAILURE if on a search results page, unrelated BERT disambiguation, or any non-Wikipedia page."
+    }
+  },
+  {
+    "id": "wiki_search_003",
+    "level": 2,
+    "goal": "Find the Wikipedia article about the attention mechanism in neural networks",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 3,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is a Wikipedia article about the attention mechanism or attention in neural networks. FAILURE if on a search results page or unrelated article."
+    }
+  },
+  {
+    "id": "wiki_search_004",
+    "level": 2,
+    "goal": "Search Wikipedia for 'Monte Carlo Tree Search' and open the article",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Monte_Carlo_tree_search"
+    }
+  },
+  {
+    "id": "wiki_search_005",
+    "level": 2,
+    "goal": "Find the Wikipedia article about Geoffrey Hinton and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the Wikipedia article about Geoffrey Hinton, the AI researcher. FAILURE if on a search page or unrelated content."
+    }
+  },
+  {
+    "id": "hn_search_001",
+    "level": 2,
+    "goal": "On Hacker News, find the article ranked number 1 on the front page and open it",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the agent has navigated to an external article page (not Hacker News itself, not a HN comments page). FAILURE if still on news.ycombinator.com."
+    }
+  },
+  {
+    "id": "hn_search_002",
+    "level": 2,
+    "goal": "On Hacker News, open the comments section of the top story",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com/item?id="
+    }
+  },
+  {
+    "id": "hn_search_003",
+    "level": 2,
+    "goal": "On Hacker News, navigate to the newest submissions page",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com/newest"
+    }
+  },
+  {
+    "id": "arxiv_search_001",
+    "level": 2,
+    "goal": "Find the arxiv paper 'Attention Is All You Need' and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the arxiv abstract or PDF for 'Attention Is All You Need' by Vaswani et al. FAILURE if on a search results page or a different paper."
+    }
+  },
+  {
+    "id": "arxiv_search_002",
+    "level": 2,
+    "goal": "Search arxiv for papers about 'reinforcement learning from human feedback' and open the first result",
+    "start_url": "https://arxiv.org",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an arxiv paper page about RLHF or training from human feedback. FAILURE if still on arxiv search results or on an unrelated paper."
+    }
+  },
+  {
+    "id": "arxiv_search_003",
+    "level": 2,
+    "goal": "Find Anthropic's Constitutional AI paper on arxiv and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an arxiv paper or Anthropic page specifically about Constitutional AI. FAILURE if on a general search page or unrelated content."
+    }
+  },
+  {
+    "id": "arxiv_search_004",
+    "level": 2,
+    "goal": "Go to arxiv and search for 'GPT-4 technical report', then open the first result",
+    "start_url": "https://arxiv.org",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an arxiv paper page related to GPT-4 technical report. FAILURE if on a search results page or unrelated content."
+    }
+  },
+  {
+    "id": "github_search_001",
+    "level": 2,
+    "goal": "Go to GitHub and search for 'web agent playwright', then open the most relevant repository",
+    "start_url": "https://github.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is a GitHub repository page (URL contains github.com/<user>/<repo>) related to web agents or Playwright automation. FAILURE if still on GitHub search results or on the GitHub homepage."
+    }
+  },
+  {
+    "id": "github_search_002",
+    "level": 2,
+    "goal": "Find the official Playwright GitHub repository and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "url_contains",
+      "value": "github.com/microsoft/playwright"
+    }
+  },
+  {
+    "id": "github_nav_001",
+    "level": 1,
+    "goal": "Go to GitHub's trending repositories page",
+    "start_url": "https://github.com",
+    "expected_steps": 2,
+    "checker": {
+      "type": "url_contains",
+      "value": "github.com/trending"
+    }
+  },
+  {
+    "id": "wiki_multi_001",
+    "level": 3,
+    "goal": "On Wikipedia, search for 'neural network', open the article, then find and click the link to 'backpropagation' within the article",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 5,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Backpropagation"
+    }
+  },
+  {
+    "id": "wiki_multi_002",
+    "level": 3,
+    "goal": "On Wikipedia, go to the article about 'Generative adversarial network', then navigate to the article about its inventor Ian Goodfellow",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 5,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the Wikipedia article about Ian Goodfellow. FAILURE if on any other page."
+    }
+  },
+  {
+    "id": "wiki_multi_003",
+    "level": 3,
+    "goal": "Search Wikipedia for 'OpenAI', open the article, then find and click the link to 'ChatGPT' within the article",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 5,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/ChatGPT"
+    }
+  },
+  {
+    "id": "hn_multi_001",
+    "level": 3,
+    "goal": "On Hacker News, go to the 'Ask HN' section, find the top post, and open its comments",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "url_contains",
+      "value": "news.ycombinator.com/item?id="
+    }
+  },
+  {
+    "id": "hn_multi_002",
+    "level": 3,
+    "goal": "On Hacker News, find the article ranked number 3 on the front page and open it",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the agent has navigated to an external article page. The agent must have specifically targeted the 3rd ranked story, not just any story. FAILURE if still on HN or on the wrong story."
+    }
+  },
+  {
+    "id": "arxiv_multi_001",
+    "level": 3,
+    "goal": "Search arxiv for 'multimodal large language model', filter by Computer Science subject, and open the first result",
+    "start_url": "https://arxiv.org",
+    "expected_steps": 6,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an arxiv paper about multimodal LLMs. FAILURE if on a search results page or unrelated content."
+    }
+  },
+  {
+    "id": "arxiv_multi_002",
+    "level": 3,
+    "goal": "Find the 'Mixtral' paper on arxiv by searching Google, then open the abstract page",
+    "start_url": "https://www.google.com",
+    "expected_steps": 5,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the arxiv abstract page for the Mixtral paper by Mistral AI. FAILURE if on a search page or a different paper."
+    }
+  },
+  {
+    "id": "github_multi_001",
+    "level": 3,
+    "goal": "On GitHub, search for 'LLM agent', sort results by Most Stars, and open the top repository",
+    "start_url": "https://github.com",
+    "expected_steps": 5,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is a GitHub repository page about LLM agents. FAILURE if still on search results or on GitHub homepage."
+    }
+  },
+  {
+    "id": "github_multi_002",
+    "level": 3,
+    "goal": "Go to the trending Python repositories on GitHub and open the top trending repository",
+    "start_url": "https://github.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is a GitHub repository page. The agent should have gone through the trending page filtered by Python. FAILURE if still on the trending page or GitHub homepage."
+    }
+  },
+  {
+    "id": "cross_001",
+    "level": 3,
+    "goal": "Search Google for 'best free machine learning courses 2024' and open the most relevant result",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the agent is on a page listing or describing free ML courses (blog, course platform, curated list). FAILURE if still on Google search results or unrelated content."
+    }
+  },
+  {
+    "id": "cross_002",
+    "level": 3,
+    "goal": "Find the Wikipedia article about 'AlphaGo', then search for the original DeepMind AlphaGo paper on arxiv and open it",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 7,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the final page is an arxiv paper or Nature paper page about AlphaGo by DeepMind. FAILURE if on Wikipedia or a search results page."
+    }
+  },
+  {
+    "id": "wiki_search_006",
+    "level": 2,
+    "goal": "Search Wikipedia for 'Convolutional neural network' and open the article",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Convolutional_neural_network"
+    }
+  },
+  {
+    "id": "wiki_search_007",
+    "level": 2,
+    "goal": "Find the Wikipedia article about 'Prompt engineering' and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the Wikipedia article about prompt engineering. FAILURE if on a search page or unrelated article."
+    }
+  },
+  {
+    "id": "hn_search_004",
+    "level": 2,
+    "goal": "On Hacker News, go to the 'past' page to see yesterday's top stories",
+    "start_url": "https://news.ycombinator.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page shows Hacker News stories from a past date (URL contains 'front' or 'day=' parameter, or page title indicates a past date). FAILURE if showing today's front page."
+    }
+  },
+  {
+    "id": "arxiv_search_005",
+    "level": 2,
+    "goal": "Search arxiv for 'chain of thought prompting' and open the first result",
+    "start_url": "https://arxiv.org",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an arxiv paper about chain-of-thought prompting. FAILURE if on a search results page or unrelated paper."
+    }
+  },
+  {
+    "id": "github_search_003",
+    "level": 2,
+    "goal": "Find the official LangChain GitHub repository and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "url_contains",
+      "value": "github.com/langchain-ai/langchain"
+    }
+  },
+  {
+    "id": "wiki_nav_006",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about the ImageNet dataset",
+    "start_url": "https://www.google.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/ImageNet"
+    }
+  },
+  {
+    "id": "wiki_nav_007",
+    "level": 1,
+    "goal": "Go to the Wikipedia article about gradient descent",
+    "start_url": "https://www.google.com",
+    "expected_steps": 3,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Gradient_descent"
+    }
+  },
+  {
+    "id": "wiki_multi_004",
+    "level": 3,
+    "goal": "On Wikipedia, search for 'Recurrent neural network', open the article, then navigate to the 'Long short-term memory' article via a link in the page",
+    "start_url": "https://en.wikipedia.org",
+    "expected_steps": 5,
+    "checker": {
+      "type": "url_contains",
+      "value": "wikipedia.org/wiki/Long_short-term_memory"
+    }
+  },
+  {
+    "id": "github_multi_003",
+    "level": 3,
+    "goal": "On GitHub, find the 'transformers' library by Hugging Face and open its Issues page",
+    "start_url": "https://github.com",
+    "expected_steps": 5,
+    "checker": {
+      "type": "url_contains",
+      "value": "github.com/huggingface/transformers/issues"
+    }
+  },
+  {
+    "id": "cross_003",
+    "level": 2,
+    "goal": "Search Google for the OpenAI blog post about GPT-4 and open the official OpenAI page",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an official OpenAI blog or research page about GPT-4. FAILURE if on a search results page, a third-party article, or unrelated OpenAI page."
+    }
+  },
+  {
+    "id": "arxiv_multi_003",
+    "level": 3,
+    "goal": "On arxiv, search for papers by 'Yann LeCun' and open the most recent one",
+    "start_url": "https://arxiv.org",
+    "expected_steps": 5,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is an arxiv paper page authored by or co-authored by Yann LeCun. FAILURE if on a search results page or unrelated paper."
+    }
+  },
+  {
+    "id": "wiki_search_008",
+    "level": 2,
+    "goal": "Find the Wikipedia article about 'Retrieval-augmented generation' and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is a Wikipedia article about Retrieval-Augmented Generation (RAG). FAILURE if on a search page or unrelated article."
+    }
+  },
+  {
+    "id": "github_search_004",
+    "level": 2,
+    "goal": "Find the official AutoGPT GitHub repository and open it",
+    "start_url": "https://www.google.com",
+    "expected_steps": 4,
+    "checker": {
+      "type": "llm_judge",
+      "hint": "SUCCESS if the page is the GitHub repository page for AutoGPT. FAILURE if on a search results page or unrelated repository."
+    }
+  }
+]

@@ -5,19 +5,26 @@ from numpy import rint
 from playwright.async_api import async_playwright, Page, Browser, Playwright
 from playwright_stealth import Stealth
 import json
+import time
 from typing import Dict, Any, Optional
 import asyncio
 
 
 class Executor:
     """Browser executor for web automation"""
-    
-    def __init__(self, headless: bool = False, use_vision: bool = False):
+
+    def __init__(
+        self,
+        headless: bool = False,
+        use_vision: bool = False,
+        frame_queue: Optional[asyncio.Queue] = None,
+    ):
         """
         Initialize executor
-        
+
         Args:
             headless: Whether to run browser in headless mode
+            frame_queue: Optional queue to receive base64 JPEG frames from CDP screencast
         """
         self.headless = headless
         self.use_vision = use_vision
@@ -25,6 +32,10 @@ class Executor:
         self.page: Optional[Page] = None
         self.playwright: Optional[Playwright] = None
         self.stealth_context = None
+        self._cdp_session = None
+        self._frame_queue: Optional[asyncio.Queue] = frame_queue
+        self._last_frame_time: float = 0
+        self._frame_interval: float = 0.1  # 10fps max
 
         # # Initialize vision analyzer if enabled
         # if self.use_vision:
@@ -62,11 +73,16 @@ class Executor:
         
         # Navigate to start URL
         await self.page.goto(start_url)
-        
+
+        # Auto-start screencast if a frame_queue was provided
+        if self._frame_queue is not None:
+            await self.start_screencast(self._frame_queue)
+
         print("✅ Browser launched successfully")
         
     async def stop(self):
         """Close browser"""
+        await self.stop_screencast()
         if self.browser:
             await self.browser.close()
 
@@ -75,6 +91,71 @@ class Executor:
             await self.stealth_context.__aexit__(None, None, None)
 
         print("🛑 Browser closed")
+
+    async def start_screencast(self, frame_queue: asyncio.Queue):
+        """Start CDP screencast and push base64 JPEG frames to frame_queue."""
+        if not self.page:
+            return
+        self._frame_queue = frame_queue
+        self._cdp_session = await self.page.context.new_cdp_session(self.page)
+        await self._cdp_session.send("Page.startScreencast", {
+            "format": "jpeg",
+            "quality": 70,
+            "maxWidth": 1280,
+            "maxHeight": 720,
+            "everyNthFrame": 1,
+        })
+        self._cdp_session.on("Page.screencastFrame", self._on_screencast_frame)
+        print("📹 Screencast started")
+
+    def _on_screencast_frame(self, params: Dict):
+        """Handle incoming screencast frame (sync callback, schedules async work)."""
+        now = time.monotonic()
+        if now - self._last_frame_time < self._frame_interval:
+            # Throttle: ack but discard the frame
+            asyncio.ensure_future(
+                self._cdp_session.send("Page.screencastFrameAck", {"sessionId": params["sessionId"]})
+            )
+            return
+        self._last_frame_time = now
+        frame_data = params["data"]
+        session_id = params["sessionId"]
+        if self._frame_queue is not None:
+            asyncio.ensure_future(self._frame_queue.put(frame_data))
+        asyncio.ensure_future(
+            self._cdp_session.send("Page.screencastFrameAck", {"sessionId": session_id})
+        )
+
+    async def stop_screencast(self, clear_queue: bool = True):
+        """Stop CDP screencast. Pass clear_queue=False when re-attaching to a new page."""
+        if self._cdp_session:
+            try:
+                await self._cdp_session.send("Page.stopScreencast")
+            except Exception:
+                pass
+            self._cdp_session = None
+        if clear_queue:
+            self._frame_queue = None
+
+    async def dispatch_reload(self):
+        """Reload the current page."""
+        if self.page:
+            await self.page.reload()
+
+    async def dispatch_click(self, x: int, y: int):
+        """Forward a click to the browser via CDP (used for web UI interaction)."""
+        if not self._cdp_session:
+            return
+        base = {"x": x, "y": y, "button": "left", "clickCount": 1, "pointerType": "mouse"}
+        await self._cdp_session.send("Input.dispatchMouseEvent", {**base, "type": "mousePressed", "buttons": 1})
+        await self._cdp_session.send("Input.dispatchMouseEvent", {**base, "type": "mouseReleased", "buttons": 0})
+
+    async def dispatch_key(self, text: str):
+        """Forward a text character to the browser via CDP."""
+        if not self._cdp_session:
+            return
+        for char in text:
+            await self._cdp_session.send("Input.dispatchKeyEvent", {"type": "char", "text": char})
     
     async def get_page_state(self) -> Dict[str, Any]:
         """
@@ -231,6 +312,13 @@ class Executor:
                 await new_page.wait_for_load_state('domcontentloaded', timeout=5000)
                 self.page = new_page
                 print(f"   📍 Now on: {self.page.url}")
+
+                # Re-attach screencast to the new page (keep frame_queue alive)
+                if self._frame_queue is not None:
+                    fq = self._frame_queue
+                    await self.stop_screencast(clear_queue=False)
+                    await self.start_screencast(fq)
+
             except asyncio.TimeoutError:
                 print(f"   📍 Same page navigation")
             finally:
@@ -287,7 +375,7 @@ class Executor:
         
         # Try to find element by text
         # Support multiple selectors
-        selectors = ['button','link']
+        selectors = ['button', 'link', 'menuitemradio', 'menuitem', 'option']
         
         clicked = False
         for selector in selectors:
@@ -300,7 +388,27 @@ class Executor:
                     break
             except:
                 continue
-        
+
+        if not clicked:
+            try:
+                element = self.page.get_by_text(target, exact=True).first
+                if await element.count() > 0:
+                    clicked = await self._click_and_handle_new_tab(element, target)
+                    if clicked:
+                        print(f"✅ Clicked via get_by_text: {target}")
+            except:
+                pass
+
+        if not clicked:
+            try:
+                element = self.page.get_by_text(target, exact=False).first
+                if await element.count() > 0:
+                    clicked = await self._click_and_handle_new_tab(element, target)
+                    if clicked:
+                        print(f"✅ Clicked via get_by_text fuzzy: {target}")
+            except:
+                pass
+
         if not clicked:
             return {'success': False, 'error': f'Element not found: {target}'}
         
@@ -540,6 +648,7 @@ class Executor:
                         except:
                             pass
                     
+                    
                     if not selected:
                         return {
                             'success': False,
@@ -587,6 +696,15 @@ class Executor:
                             element = self.page.locator(f'[role="option"]:has-text("{option}")').first
                             if await element.count() > 0:
                                 option_element = element
+                        except:
+                            pass
+
+                    if not option_element:
+                        try:
+                            element = self.page.get_by_role("menuitemradio", name=option).first
+                            if await element.count() > 0:
+                                option_element = element
+                                print(f"   ✓ Found option by menuitemradio: {option}")
                         except:
                             pass
                     
